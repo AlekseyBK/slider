@@ -8,24 +8,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const images = imageFileNames.map((name) => `./img/${name}.webp`);
 
     let currentIndex = 1;
-    let isTransitioning = false;
-    let interval;
+    let interval = null;
     let startX = 0;
     let moveX = 0;
     let isDragging = false;
+    let currentTranslate = 0;
 
-    // Инициализация слайдера
     function initSlider() {
         slidesContainer.innerHTML = '';
-
-        addSlide(images[images.length - 1], true);
-        images.forEach((img) => addSlide(img));
-        addSlide(images[0], true);
-
-        paginationContainer.innerHTML = images
-            .map((_, index) => `<div class="dot" data-index="${index + 1}"></div>`)
-            .join('');
         
+        const extendedImages = [images[images.length - 1], ...images, images[0]];
+        extendedImages.forEach(img => addSlide(img));
+
+        paginationContainer.innerHTML = images.map((_, index) => `<div class="dot" data-index="${index + 1}"></div>`).join('');
         document.querySelectorAll('.dot')[0].classList.add('active');
 
         addDotListeners();
@@ -34,32 +29,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         startInterval();
     }
 
-    // Добавление слайда
-    function addSlide(imgSrc, isClone = false) {
+    function addSlide(imgSrc) {
         const slide = document.createElement('div');
-        slide.classList.add('slide', isClone && 'clone');
+        slide.classList.add('slide');
         slide.innerHTML = `<img src="${imgSrc}" alt="slider">`;
         slidesContainer.appendChild(slide);
     }
 
-    // Обновление активного слайда
     function updateSlider(instant = false) {
         slidesContainer.style.transition = instant ? 'none' : 'transform 0.3s ease';
         slidesContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
     }
 
-    // Обновление точек пагинации
     function updatePagination() {
         document.querySelectorAll('.dot').forEach((dot, index) => {
             dot.classList.toggle('active', index === (currentIndex - 1 + images.length) % images.length);
         });
     }
 
-    // Переключение слайда
     function changeSlide(newIndex) {
-        if (isTransitioning) return;
-        isTransitioning = true;
-
         currentIndex = newIndex;
         updateSlider();
         updatePagination();
@@ -72,13 +60,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 currentIndex = images.length;
                 updateSlider(true);
             }
-            isTransitioning = false;
-        }, 500);
+        }, 300);
 
         resetInterval();
     }
 
-    // Добавление обработчиков клика на точки пагинации
     function addDotListeners() {
         document.querySelectorAll('.dot').forEach((dot) => {
             dot.addEventListener('click', () => {
@@ -90,66 +76,88 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Добавление обработчиков свайпа
     function addSwipeListeners() {
-        slidesContainer.addEventListener('touchstart', (event) => {
-            startX = event.touches[0].clientX;
-        });
-
-        slidesContainer.addEventListener('touchmove', (event) => {
-            moveX = event.touches[0].clientX - startX;
-        });
-
-        slidesContainer.addEventListener('touchend', () => {
-            if (moveX > 50) {
-                changeSlide(currentIndex - 1);
-            } else if (moveX < -50) {
-                changeSlide(currentIndex + 1);
-            }
-        });
-
-        slidesContainer.addEventListener('mousedown', (event) => {
+        function startDrag(x) {
             isDragging = true;
-            startX = event.clientX;
-        });
-
-        slidesContainer.addEventListener('mousemove', (event) => {
+            startX = x;
+            currentTranslate = -currentIndex * slidesContainer.clientWidth;
+            slidesContainer.style.transition = 'none';
+            clearInterval(interval);
+    
+            // Добавляем обработчики только в пределах слайдера
+            slidesContainer.addEventListener('mousemove', onMoveDrag);
+            slidesContainer.addEventListener('mouseup', onEndDrag);
+            slidesContainer.addEventListener('mouseleave', onEndDrag);
+            slidesContainer.addEventListener('touchmove', onMoveDrag);
+            slidesContainer.addEventListener('touchend', onEndDrag);
+        }
+    
+        function onMoveDrag(event) {
             if (!isDragging) return;
-            moveX = event.clientX - startX;
-        });
-
-        slidesContainer.addEventListener('mouseup', () => {
+            const x = event.touches ? event.touches[0].clientX : event.clientX;
+            moveX = x - startX;
+            slidesContainer.style.transform = `translateX(${currentTranslate + moveX}px)`;
+        }
+    
+        function onEndDrag() {
             if (!isDragging) return;
             isDragging = false;
-            if (moveX > 50) {
-                changeSlide(currentIndex - 1);
-            } else if (moveX < -50) {
-                changeSlide(currentIndex + 1);
+            slidesContainer.style.transition = 'transform 0.3s ease';
+        
+            if (Math.abs(moveX) > slidesContainer.clientWidth / 4) {
+                currentIndex += moveX > 0 ? -1 : 1;
             }
-        });
-
-        slidesContainer.addEventListener('mouseleave', () => {
-            isDragging = false;
-        });
+        
+            updateSlider();
+            updatePagination(); // ✅ Обновляем пагинацию
+            resetInterval();    // ✅ Перезапускаем таймер
+        
+            // Ждем окончания анимации перед проверкой крайних слайдов
+            slidesContainer.addEventListener('transitionend', checkLoop, { once: true });
+        
+            moveX = 0;
+        
+            // Убираем обработчики
+            slidesContainer.removeEventListener('mousemove', onMoveDrag);
+            slidesContainer.removeEventListener('mouseup', onEndDrag);
+            slidesContainer.removeEventListener('mouseleave', onEndDrag);
+            slidesContainer.removeEventListener('touchmove', onMoveDrag);
+            slidesContainer.removeEventListener('touchend', onEndDrag);
+        }
+        
+        function checkLoop() {
+            if (currentIndex > images.length) {
+                // Перескакиваем мгновенно к первому слайду (без анимации)
+                currentIndex = 1;
+                updateSlider(true);
+            } else if (currentIndex === 0) {
+                // Перескакиваем мгновенно к последнему слайду
+                currentIndex = images.length;
+                updateSlider(true);
+            }
+        }
+    
+        slidesContainer.addEventListener('mousedown', (event) => startDrag(event.clientX));
+        slidesContainer.addEventListener('touchstart', (event) => startDrag(event.touches[0].clientX));
     }
 
-    // Кнопки навигации
     prevBtn.addEventListener('click', () => changeSlide(currentIndex - 1));
     nextBtn.addEventListener('click', () => changeSlide(currentIndex + 1));
 
-    // Управление клавиатурой
     document.addEventListener('keydown', ({ key }) => {
         if (key === 'ArrowLeft') changeSlide(currentIndex - 1);
         if (key === 'ArrowRight') changeSlide(currentIndex + 1);
     });
 
-    // Автопереключение
     function startInterval() {
-        interval = setInterval(() => changeSlide(currentIndex + 1), 3000);
+        if (!interval) {
+            interval = setInterval(() => changeSlide(currentIndex + 1), 3000);
+        }
     }
 
     function resetInterval() {
         clearInterval(interval);
+        interval = null;
         startInterval();
     }
 
