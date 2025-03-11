@@ -1,0 +1,103 @@
+/* Сброс стандартных отступов и рамок */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+/* Основные стили для слайдера */
+.slider {
+    position: relative;
+    /* max-height: 400px; */
+    height: auto;
+
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+.slider .slides {
+    display: flex;
+}
+.slides .slide {
+    min-width: 100%;
+    min-height: 200px;
+}
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    -webkit-user-drag: none;
+}
+/* Кнопки навигации */
+.buttons {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+}
+.button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    position: relative;
+    cursor: pointer;
+}
+.arrow {
+    width: 17px;
+    height: 17px;
+    border-top: 3px solid #d91837;
+    border-right: 3px solid #d91837;
+    border-radius: 3px;
+    position: absolute;
+    top: 17px;
+}
+.button.prev {
+    margin-left: 10px;
+}
+.button.next {
+    margin-right: 10px;
+}
+.button.prev .arrow {
+    transform: rotate(225deg);
+    left: 19px;
+}
+.button.next .arrow {
+    transform: rotate(45deg);
+    right: 20px;
+}
+/* Пагинация */
+.pagination {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    padding: 12px 18px;
+    background: #fff;
+    border-radius: 50px;
+}
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #cccccc;
+    cursor: pointer;
+}
+.dot.active {
+    background-color: #f90B31;
+}
+
+@media (max-width: 900px) {
+    .buttons {
+        display: none;
+    }
+}
+@media (min-width: 1080px) {
+    .slides .slide {
+        height: 400px;
+    }
+}
