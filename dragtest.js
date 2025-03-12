@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const prevBtn = document.querySelector('.prev');
     const nextBtn = document.querySelector('.next');
 
-    const imageFileNames = ['0', '3'];
+    const imageFileNames = ['0', '3', '8'];
     const images = imageFileNames.map((name) => `./img/${name}.webp`);
 
     let currentIndex = 1;
