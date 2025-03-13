@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function addSlide(imgSrc) {
         const slide = document.createElement('div');
         slide.classList.add('slide');
-        slide.innerHTML = `<img src="${imgSrc}" alt="slider">`;
+        slide.innerHTML = `<img src="${imgSrc}" alt="slide">`;
         slidesContainer.appendChild(slide);
     }
 
