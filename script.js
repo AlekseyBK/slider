@@ -4,14 +4,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const prevBtn = document.querySelector('.prev');
     const nextBtn = document.querySelector('.next');
 
-    const imageFileNames = ['0', '3'];
+    const imageFileNames = ['0', '3', '8', '8', '8'];
     const images = imageFileNames.map((name) => `./img/${name}.webp`);
 
     let currentIndex = 1;
     let interval = null;
-    let isDragging = false;
-    let startX = 0;
-    let moveX = 0;
+    let isAnimating = false; // Флаг для блокировки повторных действий
 
     function initSlider() {
         slidesContainer.innerHTML = '';
@@ -47,6 +45,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function changeSlide(newIndex) {
+        if (isAnimating) return; // Блокируем повторные вызовы
+        isAnimating = true;
+
         currentIndex = newIndex;
         updateSlider();
         updatePagination();
@@ -59,6 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 currentIndex = images.length;
                 updateSlider(true);
             }
+            isAnimating = false; // Разблокируем после завершения анимации
         }, 300);
 
         resetInterval();
@@ -76,7 +78,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function addSwipeListeners() {
+        let isDragging = false;
+        let startX = 0;
+        let moveX = 0;
+
         function startDrag(x) {
+            if (isAnimating) return; // Не даем свайпу срабатывать во время анимации
             isDragging = true;
             startX = x;
             slidesContainer.style.transition = 'none';
@@ -100,17 +107,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             changeSlide(currentIndex);
-
             moveX = 0;
         }
 
         slidesContainer.addEventListener('mousedown', (event) => startDrag(event.clientX));
-        slidesContainer.addEventListener('mousemove', onMoveDrag);
-        slidesContainer.addEventListener('mouseup', onEndDrag);
-        slidesContainer.addEventListener('mouseleave', onEndDrag);
         slidesContainer.addEventListener('touchstart', (event) => startDrag(event.touches[0].clientX));
-        slidesContainer.addEventListener('touchmove', onMoveDrag);
-        slidesContainer.addEventListener('touchend', onEndDrag);
+
+        document.addEventListener('mousemove', onMoveDrag);
+        document.addEventListener('mouseup', onEndDrag);
+        document.addEventListener('touchmove', onMoveDrag);
+        document.addEventListener('touchend', onEndDrag);
     }
 
     prevBtn.addEventListener('click', () => changeSlide(currentIndex - 1));
